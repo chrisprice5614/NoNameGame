@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>The Game With No Name — Crowdfunding</title>
+  <%- include("includes/head") %>
+  <meta name="description" content="Back The Game With No Name — a multiplayer cowboy party game!"/>
+
+  <!-- Primary SEO -->
+<title>The Game With No Name</title>
+<meta name="title" content="The Game With No Name">
+<meta name="description" content="Fast action cowboy shooter fun.">
+<link rel="canonical" href="https://gamewithnoname.com/">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#B2663A">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Game With No Name">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://gamewithnoname.com/">
+<meta property="og:title" content="The Game With No Name">
+<meta property="og:description" content="Fast action cowboy shooter fun.">
+<meta property="og:image" content="https://gamewithnoname.com/img/s5.png">
+<meta property="og:image:alt" content="The Game With No Name key art">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://gamewithnoname.com/">
+<meta name="twitter:title" content="The Game With No Name">
+<meta name="twitter:description" content="Fast action cowboy shooter fun.">
+<meta name="twitter:image" content="https://gamewithnoname.com/img/s5.png">
+<!-- Optional: add your handle if you have one -->
+<!-- <meta name="twitter:site" content="@YourHandle"> -->
+
+
+</head>
+<body>
+  <header class="topbar">
+    <%- include("includes/header") %>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="pill">Western Action • Local Multiplayer</div>
+      <h1>Kick up dust. Cause mayhem. <br/> The Game With No Name</h1>
+      <p>Wrangle your friends for a crazy arena style arcade shooter game. Back the project to unlock online multiplier, more features, a story mode, and more!</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/back">Back this project</a>
+        <!--<a class="btn" style="border-color: color-mix(in oklab, var(--ink-800), white 70%);" href="#trailer">Watch trailer</a>-->
+      </div>
+
+      <div class="kpis">
+        <div class="stat">
+          <h3>Raised</h3>
+          <div class="num" id="statRaised">$0</div>
+        </div>
+        <div class="stat">
+          <h3>Goal</h3>
+          <div class="num" id="statGoal">$80,000</div>
+        </div>
+        <div class="stat">
+          <h3>Backers</h3>
+          <div class="num" id="statBackers">0</div>
+        </div>
+        <div class="stat">
+          <h3>Days Left</h3>
+          <div class="num" id="statDays">30</div>
+        </div>
+        <div class="progress">
+          <div class="bar"><i id="barFill"></i></div>
+          <div class="bar-legend"><span id="barPct">0%</span><span id="barLegendRight">$0 of $0</span></div>
+        </div>
+      </div>
+    </section>
+
+    <%- include("includes/tiers") %>
+
+    <section id="gallery">
+      <h2 class="section-title">Screenshots</h2>
+      <div class="grid gallery mt-3">
+        <div class="ph"><img src="/img/screen1.png" alt="Screenshot of the game" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px;"></div>
+        <div class="ph"><img src="/img/screen2.png" alt="Screenshot of the game" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px"></div>
+        <div class="ph"><img src="/img/s5.PNG" alt="Screenshot of the game" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px"></div>
+        <div class="ph"><img src="/img/s1.PNG" alt="Screenshot of the game" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px"></div>
+        <div class="ph"><img src="/img/s2.PNG" alt="Screenshot of the game" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px"></div>
+        <div class="ph"><img src="/img/s3.PNG" alt="Screenshot of the game" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px"></div>
+      </div>
+    </section>
+
+    <section id="download">
+        <h2 class="section-title">Play The Pre-Alpha</h2>
+        <p>Download the local splitscreen pre-alpha build to try the game yourself!</p>
+        <p><em>Splitscreen multiplayer only!</em></p>
+        <br>
+        <a href="https://drive.google.com/uc?export=download&id=1Lqcn4KXDB6b7ajPQqiOdivAYbo1Cff_c" target="_blank" class="btn btn-primary">Download</a>
+    </section>
+
+    <section id="story">
+      <h2 class="section-title">What is The Game With No Name?</h2>
+      <p class="section-sub">A fast-paced multiplayer western shooter game where every shot matters. Pick up weapons from around the map and use them to fight your enemies in different ways. Each weapon includes different perks, making you have to pick your tool for fighting.</p>
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:18px;" class="mt-3">
+        <article class="card">
+          <h3 class="mb-1">Built For Multiplayer</h3>
+          <p>High skill ceiling allows for different play styles. Each bullet counts, letting you slow down your enemies by shooting them in the leg, mess up their aim by shooting them in the arm, knocking off their hat by shooting right above their head, and draining all their health by aiming for the brain or heart.</p>
+        </article>
+        <article class="card">
+          <h3 class="mb-1">Physics That Allows For Chaos</h3>
+          <p>Throw objects into the street, take a ride on a traincar, or use the shotgun knockback to your advantage. There's never a dull moment in this game.</p>
+        </article>
+        <article class="card">
+          <h3 class="mb-1">Expertly Designed Maps</h3>
+          <p>Each map has hallways, buildings, and other settings that let you get into an intense fight. Use the map to your advantage and show your enemies you know the land the best.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <h2 class="section-title">Roadmap</h2>
+      <p class="section-sub">Your backing funds art, music, level design, network polish, QA, and launch. Milestones adjust with stretch goals.</p>
+      <div class="road mt-3">
+        <div class="milestone"><strong>Alpha (Month 1–3):</strong> Adding online multiplayer support.</div>
+        <div class="milestone"><strong>Beta (Month 4–6):</strong> More features, more fun! Adding more maps, weapons, gamemodes, etc</div>
+        <div class="milestone"><strong>Release (Month 7–8):</strong> Steam launch, accessibility, story mode, more game modes..</div>
+        <div class="milestone"><strong>Stretch:</strong> Console ports, regular updates.</div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2 class="section-title">FAQ</h2>
+      <details open>
+        <summary>Which platforms?</summary>
+        <p class="mt-2">PC at launch (Steam). In the future we plan on having console support.</p>
+      </details>
+      <details>
+        <summary>Is there online multiplayer?</summary>
+        <p class="mt-2">That's the first goal! Chris Price Music has a strong grasp of networking and is working to get a fully functioned server running to allow for online matchmaking, private games, and leaderboards!</p>
+      </details>
+      <details>
+        <summary>Controller support?</summary>
+        <p class="mt-2">Full controller support. Keyboard works too!</p>
+      </details>
+    </section>
+
+    <section id="back">
+      <h2 class="section-title">Ready to back it?</h2>
+      <p class="section-sub">Help fund the development of <em>The Game with No Name</em></p>
+      <div class="row mt-2">
+        <a class="btn btn-primary" href="/back">Back now</a>
+        <!--<a class="btn" style="border-color: color-mix(in oklab, var(--ink-800), white 70%);" href="#press">Press kit</a> -->
+      </div>
+    </section>
+
+    <br>
+    <section style="text-align: center;">
+        <h1 style="text-align: center;">Learn About The Developer</h1>
+        <br>
+        <a href="https://info.chrispricemusic.net" target="_blank" class="btn btn-primary">The Developer</a>
+    </section>
+
+
+    <footer class="center mt-4" style="padding:24px; color:var(--muted);">
+      <%- include("includes/footer") %>
+    </footer>
+
+    
+
+  </main>
+
+  <div class="sticky-cta">
+    <div class="container" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <strong>Back “The Game With No Name”</strong>
+      <a class="btn btn-primary" href="#back">Back now</a>
+    </div>
+  </div>
+
+  <script>
+    // ---------------- CONFIG (edit these for your campaign) ----------------
+    const CAMPAIGN = {
+      goal: 80000,             // total goal in USD
+      raised: Number(<%- stats.totalCents %>),           // current raised amount
+      backers: Number(<%- stats.donors %>),           // current backer count
+      deadline: new Date("03/08/2026") // 28 days from now
+    };
+    // ----------------------------------------------------------------------
+
+    const $ = (sel) => document.querySelector(sel);
+    const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+    const pct = Math.max(0, Math.min(100, Math.round((CAMPAIGN.raised / CAMPAIGN.goal) * 100)));
+    const daysLeft = Math.max(0, Math.ceil((CAMPAIGN.deadline - Date.now()) / (1000*60*60*24)));
+
+    $('#statRaised').textContent = fmt.format(CAMPAIGN.raised);
+    $('#statGoal').textContent = fmt.format(CAMPAIGN.goal);
+    $('#statBackers').textContent = CAMPAIGN.backers.toLocaleString();
+    $('#statDays').textContent = daysLeft.toString();
+    $('#barPct').textContent = pct + '%';
+    $('#barLegendRight').textContent = `${fmt.format(CAMPAIGN.raised)} of ${fmt.format(CAMPAIGN.goal)}`;
+
+    const bar = document.getElementById('barFill');
+    requestAnimationFrame(() => { bar.style.width = pct + '%'; bar.style.transition = 'width 900ms cubic-bezier(.22,.8,.32,1)'; });
+
+    
+
+    // Optional: Dark mode toggle for quick preview in console
+    // document.documentElement.classList.toggle('dark');
+  </script>
+
+  <!--
+    FONTS: To use your Adobe kit (e.g., Roc Grotesk for body and a western display for headings),
+    add the kit <link> in <head> and set --font-display / --font-body above.
+    Keep everything else as-is.
+  -->
+</body>
+</html>
