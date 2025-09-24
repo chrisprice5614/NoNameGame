@@ -116,6 +116,7 @@ section{ margin-top: clamp(28px, 5vw, 72px); }
 .grid{ display:grid; gap:16px; }
 .grid.tiers{ grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .card{ background: var(--card); border:1px solid color-mix(in oklab, var(--ink-800), white 70%); border-radius:18px; padding:18px; box-shadow: var(--shadow-1); display:flex; flex-direction:column; gap:10px; }
+.card-2{ background: var(--gold-500); border:1px solid color-mix(in oklab, var(--ink-800), white 70%); border-radius:18px; padding:18px; box-shadow: var(--shadow-1); display:flex; flex-direction:column; gap:10px; }
 .price{ font-family:var(--font-display); font-size:1.6rem; }
 .perk{ display:flex; align-items:flex-start; gap:.55rem; }
 .perk i{ width:1.1rem; height:1.1rem; border-radius:4px; background: color-mix(in oklab, var(--sage-500), white 25%); margin-top:.2rem; }
@@ -165,6 +166,9 @@ summary{ cursor:pointer; font-weight:700; }
 
 /* Focus ring */
 .btn:focus-visible, a:focus-visible, summary:focus-visible, details:focus-visible{ outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 10px; }
+
+/* Blog images */
+.preview img, article img{max-width: 100%; border-radius: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.4); margin-left: auto; margin-right: auto;}
 
 /* -------------------- Responsive -------------------- */
 @media (max-width: 1080px){

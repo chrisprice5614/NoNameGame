@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Blog — Admin</title>
+
+  
+  <%- include("includes/head") %>
+  <meta name="robots" content="noindex,nofollow">
+</head>
+<body>
+<header class="topbar"><%- include("includes/header") %></header>
+<main class="container">
+  <section class="hero" style="padding-top:24px;">
+    <div class="pill">Admin</div>
+    <h1>Blog Manager</h1>
+    <a class="btn btn-primary" href="/admin/blog/new">New post</a>
+    <a class="btn" href="/blog">View blog</a>
+  </section>
+
+  <section class="mt-3" style="overflow:auto">
+    <table class="table" style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid #e3d9c6;background:#fffaf1">
+          <th style="text-align:left;padding:10px;">Title</th>
+          <th style="text-align:left;padding:10px;">Slug</th>
+          <th style="text-align:left;padding:10px;">Created</th>
+          <th style="text-align:left;padding:10px;">Status</th>
+          <th style="text-align:left;padding:10px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% posts.forEach(p => { %>
+          <tr style="border-bottom:1px solid #efe6d7">
+            <td style="padding:10px;"><%= p.title %></td>
+            <td style="padding:10px;"><code><%= p.slug %></code></td>
+            <td style="padding:10px;"><%= new Date(p.created_at).toLocaleDateString() %></td>
+            <td style="padding:10px;"><%= p.published ? 'Published' : 'Draft' %></td>
+            <td style="padding:10px; display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn" href="/admin/blog/<%= p.id %>/edit">Edit</a>
+              <% if (p.published) { %>
+                <form method="POST" action="/admin/blog/<%= p.id %>/publish" style="display:inline">
+                  <input type="hidden" name="published" value="0">
+                  <button class="btn">Unpublish</button>
+                </form>
+                <a class="btn btn-primary" href="/blog/<%= p.slug %>">View</a>
+              <% } else { %>
+                <form method="POST" action="/admin/blog/<%= p.id %>/publish" style="display:inline">
+                  <input type="hidden" name="published" value="1">
+                  <button class="btn btn-primary">Publish</button>
+                </form>
+              <% } %>
+              <form method="POST" action="/admin/blog/<%= p.id %>/delete" onsubmit="return confirm('Delete this post?')" style="display:inline">
+                <button class="btn" style="border-color:#c33;color:#c33">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (!posts.length) { %>
+          <tr><td colspan="5" style="padding:10px;color:var(--muted)">No posts yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </section>
+</main>
+<footer class="center mt-4" style="padding:24px;color:var(--muted)"><%- include("includes/footer") %></footer>
+</body>
+</html>

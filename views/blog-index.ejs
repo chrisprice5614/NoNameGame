@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Blog — The Game With No Name</title>
+  <%- include("includes/head") %>
+  <meta name="description" content="Updates and dev logs for The Game With No Name">
+</head>
+<body>
+<header class="topbar"><%- include("includes/header") %></header>
+<main class="container">
+  <section class="hero" style="padding-top:24px;">
+    <div class="pill">Blog</div>
+    <h1>Latest posts</h1>
+  </section>
+
+  <section class="grid mt-3" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:18px;">
+    <% posts.forEach(p => { %>
+      <a class="card" href="/blog/<%= p.slug %>" style="text-decoration:none; overflow:hidden; padding:0;">
+        <% if (p.hero) { %>
+            <img src="<%= p.hero %>" alt="" style="width:100%; aspect-ratio:3/1; object-fit:cover; display:block;">
+        <% } else { %>
+            <div style="width:100%; aspect-ratio:16/9; background:#efe6d2;"></div>
+        <% } %>
+        <div style="padding:14px 16px;">
+            <h3 class="mb-1"><%= p.title %></h3>
+            <p class="section-sub" style="margin:0; color:var(--muted);">
+            <%= new Date(p.created_at).toLocaleDateString() %>
+            </p>
+        </div>
+        </a>
+
+    <% }) %>
+    <% if (!posts.length) { %>
+      <p>No posts yet.</p>
+    <% } %>
+  </section>
+</main>
+<footer class="center mt-4" style="padding:24px; color:var(--muted)"><%- include("includes/footer") %></footer>
+</body>
+</html>

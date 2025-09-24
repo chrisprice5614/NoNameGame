@@ -9,6 +9,9 @@ const jwt = require("jsonwebtoken")//npm install jsonwebtoken dotenv
 const bcrypt = require("bcrypt") //npm install bcrypt
 const cookieParser = require("cookie-parser")//npm install cookie-parser
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const fs = require("fs");
+const multer = require("multer");
+const sharp = require("sharp");
 
 const online = true;
 
@@ -152,6 +155,24 @@ const createTables = db.transaction(() => {
 
     try { db.prepare(`ALTER TABLE donations ADD COLUMN stripe_payment_intent_id TEXT`).run(); } catch {}
     db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_donations_pi ON donations(stripe_payment_intent_id)`).run();
+
+
+    db.prepare(`
+    CREATE TABLE IF NOT EXISTS blog_posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      slug  TEXT NOT NULL UNIQUE,
+      html  TEXT NOT NULL,
+      published INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+    `).run();
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_blog_published ON blog_posts(published)`).run();
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_blog_created ON blog_posts(created_at)`).run();
+
+    try { db.prepare(`ALTER TABLE blog_posts ADD COLUMN hero TEXT`).run(); } catch {}
+
 })
 
 createTables()
@@ -184,6 +205,29 @@ app.use(express.json());
 app.use(body_parser.json())
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+
+app.use("/uploads", express.static(UPLOAD_DIR, { maxAge: "365d", immutable: true }));
+
+function slugify(s="") {
+  return s.toString().toLowerCase()
+    .trim()
+    .replace(/['"]/g,"")
+    .replace(/[^a-z0-9]+/g,"-")
+    .replace(/^-+|-+$/g,"")
+    .slice(0,100) || "post-" + Date.now();
+}
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (/^image\/(png|jpe?g|webp|gif|svg\+xml)$/i.test(file.mimetype)) cb(null, true);
+    else cb(new Error("Images only"), false);
+  }
+});
+
 app.get("/", (req, res) => {
   const row = db.prepare(`
     SELECT
@@ -196,6 +240,21 @@ app.get("/", (req, res) => {
     FROM donations
   `).get();
 
+  // NEW: get the 3 most recent published blog posts
+  let recentPosts = [];
+  try {
+    recentPosts = db.prepare(`
+    SELECT title, slug, created_at, hero
+    FROM blog_posts
+    WHERE published = 1
+    ORDER BY datetime(created_at) DESC
+    LIMIT 3
+  `).all();
+
+  } catch (e) {
+    // if table doesn't exist yet, keep recentPosts empty
+    recentPosts = [];
+  }
 
   res.render("index", {
     stats: {
@@ -203,9 +262,11 @@ app.get("/", (req, res) => {
       donations: row.donationCount,
       totalCents: row.totalCents,
       totalDollars: row.totalCents / 100
-    }
+    },
+    recentPosts
   });
 });
+
 
 function toCents(amountStr) {
   const n = Number(amountStr);
@@ -436,5 +497,146 @@ app.get("/thank-you", async (req, res) => {
 app.get("/back", (req,res) => {
     return res.render("back")
 })
+
+
+// Admin: list posts
+app.get("/admin/blog", requireAdmin, (req, res) => {
+  const posts = db.prepare(`
+    SELECT id, title, slug, published, created_at, updated_at
+    FROM blog_posts ORDER BY datetime(created_at) DESC
+  `).all();
+  res.render("admin-blog-list", { posts });
+});
+
+// New post
+app.get("/admin/blog/new", requireAdmin, (req, res) => {
+  res.render("blog-edit", { post: null, action: "/admin/blog/save" });
+});
+
+// Edit post
+app.get("/admin/blog/:id/edit", requireAdmin, (req, res) => {
+  const post = db.prepare("SELECT * FROM blog_posts WHERE id = ?").get(Number(req.params.id));
+  if (!post) return res.status(404).send("Post not found");
+  res.render("blog-edit", { post, action: "/admin/blog/save" });
+});
+
+// Create/update
+// Create/update
+app.post("/admin/blog/save", requireAdmin, (req, res) => {
+  const { id, title, slug, html, published, hero } = req.body; // <- hero here
+  const safeTitle = (title || "").trim();
+  const safeSlug  = slugify(slug || title || "");
+  const safeHero  = (hero || "").trim(); // can be empty
+
+  if (!safeTitle || !html) return res.status(400).send("Title and HTML required.");
+
+  if (id) {
+    db.prepare(`
+      UPDATE blog_posts
+      SET title=?, slug=?, html=?, hero=?, published=?, updated_at=CURRENT_TIMESTAMP
+      WHERE id=?
+    `).run(safeTitle, safeSlug, html, safeHero, published ? 1 : 0, Number(id));
+  } else {
+    db.prepare(`
+      INSERT INTO blog_posts (title, slug, html, hero, published)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(safeTitle, safeSlug, html, safeHero, published ? 1 : 0);
+  }
+  return res.redirect("/admin/blog");
+});
+
+
+// Toggle publish
+app.post("/admin/blog/:id/publish", requireAdmin, (req, res) => {
+  const { published } = req.body;
+  db.prepare(`UPDATE blog_posts SET published=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+    .run(published ? 1 : 0, Number(req.params.id));
+  res.redirect("/admin/blog");
+});
+
+// Delete
+app.post("/admin/blog/:id/delete", requireAdmin, (req, res) => {
+  db.prepare(`DELETE FROM blog_posts WHERE id=?`).run(Number(req.params.id));
+  res.redirect("/admin/blog");
+});
+
+// Image upload -> webp (70%), max long side 720
+app.post("/admin/blog/upload", requireAdmin, upload.array("images", 8), async (req, res) => {
+  try {
+    const results = [];
+    for (const file of req.files || []) {
+      const img = sharp(file.buffer, { failOn: "none" });
+      const meta = await img.metadata();
+      const w = meta.width || 0, h = meta.height || 0;
+      const longSide = Math.max(w, h) || 720;
+
+      const target = Math.min(720, longSide); // cap long side at 720
+      const fitOpts = w >= h ? { width: target } : { height: target };
+
+      const outName = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+      const outPath = path.join(UPLOAD_DIR, outName);
+
+      await img.resize(fitOpts).webp({ quality: 70 }).toFile(outPath);
+
+      // Get dims after resize
+      const { width: rw, height: rh } = await sharp(outPath).metadata();
+      results.push({ url: `/uploads/${outName}`, width: rw, height: rh });
+    }
+    res.json({ ok: true, files: results });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: "Upload failed" });
+  }
+});
+
+// Blog index
+app.get("/blog", (req, res) => {
+  const posts = db.prepare(`
+    SELECT title, slug, created_at, hero
+    FROM blog_posts
+    WHERE published=1
+    ORDER BY datetime(created_at) DESC
+  `).all();
+
+  res.render("blog-index", { posts });
+});
+
+// Blog post
+app.get("/blog/:slug", (req, res) => {
+  const post = db.prepare(`
+  SELECT *
+  FROM blog_posts
+  WHERE slug=? AND published=1
+`).get(req.params.slug);
+
+  if (!post) return res.status(404).render("donation-missing"); // reuse your 404 if you like
+  res.render("blog-post", { post });
+});
+
+// Single hero upload -> webp (70%), max long side 1200
+app.post("/admin/blog/upload-hero", requireAdmin, upload.single("hero"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ ok:false, error:"No file" });
+    const img = sharp(req.file.buffer, { failOn: "none" });
+    const meta = await img.metadata();
+    const w = meta.width || 0, h = meta.height || 0;
+    const longSide = Math.max(w, h) || 1200;
+    const target = Math.min(1200, longSide);
+    const fitOpts = w >= h ? { width: target } : { height: target };
+
+    const outName = `hero-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+    const outPath = path.join(UPLOAD_DIR, outName);
+
+    await img.resize(fitOpts).webp({ quality: 70 }).toFile(outPath);
+    const { width: rw, height: rh } = await sharp(outPath).metadata();
+
+    return res.json({ ok:true, file: { url: `/uploads/${outName}`, width: rw, height: rh } });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok:false, error:"Upload failed" });
+  }
+});
+
+
 
 app.listen(2024)

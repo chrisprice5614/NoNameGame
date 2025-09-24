@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title><%= post ? 'Edit Post' : 'New Post' %> — Admin</title>
+  <%- include("includes/head") %>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    .stack { display:flex; flex-direction:column; gap:12px; }
+    .editor { min-height: 320px; width:100%; }
+    .preview { background:#fff; border:1px solid #e3d9c6; border-radius:12px; padding:16px; overflow:auto; min-height:320px; }
+    .muted { color:var(--muted); }
+    .row { display:flex; gap:8px; flex-wrap:wrap; }
+    .section { margin-top: 16px; }
+  </style>
+</head>
+<body>
+<header class="topbar"><%- include("includes/header") %></header>
+
+<main class="container">
+  <section class="hero" style="padding-top:24px;">
+    <div class="pill">Admin</div>
+    <h1><%= post ? 'Edit Post' : 'New Post' %></h1>
+    <div class="row">
+      <a class="btn" href="/admin/blog">Back to posts</a>
+      <a class="btn" href="/blog">View blog</a>
+    </div>
+  </section>
+
+  <!-- EDITOR SECTION -->
+  <form method="POST" action="<%= action %>" class="stack" style="max-width:1200px; margin:0 auto;">
+  <% if (post) { %><input type="hidden" name="id" value="<%= post.id %>"><% } %>
+
+  <label class="label" for="title">Title</label>
+  <input class="input" id="title" name="title" value="<%= post ? post.title : '' %>" required>
+
+  <div class="row" style="align-items:flex-end;">
+    <div style="flex:1 1 380px; min-width:260px;">
+      <label class="label" for="slug">Slug (auto + date prefix)</label>
+      <input class="input" id="slug" name="slug" value="<%= post ? post.slug : '' %>" placeholder="e.g. sep-24-2025-your-title" autocomplete="off">
+    </div>
+    <button class="btn" id="regenSlugBtn" type="button" title="Regenerate from title">Regenerate</button>
+  </div>
+
+  <!-- HERO IMAGE -->
+  <div class="section">
+    <label class="label">Hero image</label>
+    <input type="hidden" id="hero" name="hero" value="<%= post && post.hero ? post.hero : '' %>">
+    <div class="row" style="align-items:center;">
+      <input type="file" id="heroFile" accept="image/*">
+      <button class="btn" id="uploadHeroBtn" type="button">Upload hero</button>
+      <button class="btn" id="removeHeroBtn" type="button" <%= post && post.hero ? '' : 'disabled' %>>Remove</button>
+      <span class="muted">WEBP @ 70%, max 1200px long side</span>
+    </div>
+    <div id="heroPreviewWrap" style="margin-top:10px; display:<%= post && post.hero ? 'block' : 'none' %>;">
+      <img id="heroPreview" src="<%= post && post.hero ? post.hero : '' %>" alt="Hero" style="max-width:100%; border:1px solid #e3d9c6; border-radius:12px;">
+    </div>
+  </div>
+
+  <div class="section">
+    <label class="label" for="html">HTML (raw)</label>
+    <textarea id="html" name="html" class="input editor" required><%= post ? post.html : '' %></textarea>
+  </div>
+
+  <div class="row section" style="align-items:center;">
+    <label class="label">Images</label>
+    <input type="file" id="images" multiple accept="image/*">
+    <button class="btn" id="uploadBtn" type="button">Upload & Insert</button>
+    <span class="muted" id="uploadNote">WEBP @ 70%, max 720px long side</span>
+  </div>
+
+  <div class="section">
+    <label class="label">
+      <input type="checkbox" name="published" value="1" <%= post && post.published ? 'checked' : '' %>>
+      Published
+    </label>
+  </div>
+
+  <div class="row section">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <% if (post && post.slug) { %>
+      <a class="btn" href="/blog/<%= post.slug %>" target="_blank">Open public page</a>
+    <% } %>
+  </div>
+</form>
+
+<!-- PREVIEW SECTION -->
+<section class="section" style="max-width:1200px; margin:18px auto 0;">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <h3 class="mb-1">Live preview</h3>
+    <span class="muted">Rendered below</span>
+  </div>
+  <div id="preview" class="preview">
+    <% if (post && post.hero) { %>
+      <p><img src="<%= post.hero %>" alt="" style="max-width:100%; border-radius:12px;"/></p>
+    <% } %>
+    <%- post ? post.html : '' %>
+  </div>
+</section>
+
+</main>
+
+<footer class="center mt-4" style="padding:24px; color:var(--muted);"><%- include("includes/footer") %></footer>
+
+<script>
+  // --------- Slug helpers (with date prefix) ----------
+  const titleEl = document.getElementById('title');
+  const slugEl  = document.getElementById('slug');
+  const regenBtn = document.getElementById('regenSlugBtn');
+
+  function toSlugCore(s){
+    return (s||'')
+      .toLowerCase()
+      .trim()
+      .replace(/['"]/g,'')
+      .replace(/[^a-z0-9]+/g,'-')
+      .replace(/^-+|-+$/g,'')
+      .slice(0,100);
+  }
+
+  function datePrefix(d=new Date()){
+    const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const m = months[d.getMonth()];
+    const day = d.getDate();          // no leading zero (matches your example)
+    const year = d.getFullYear();
+    return `${m}-${day}-${year}`;
+  }
+
+  function buildSlugFromTitle(){
+    const core = toSlugCore(titleEl.value);
+    if (!core) return datePrefix();
+    return `${datePrefix()}-${core}`.replace(/-+/g,'-').replace(/^-|-$/g,'');
+  }
+
+  // Track if the user manually edited slug; if so, stop auto-sync
+  let userEditedSlug = false;
+
+  // If slug is empty, live-generate as title types. If user edits slug, stop auto.
+  function maybeAutoGenerateSlug(){
+    if (userEditedSlug) return;
+    // Always generate with date prefix; overwrite slug only if it's empty OR it matches our previous pattern
+    if (!slugEl.value || slugEl.dataset.autofill === '1') {
+      slugEl.value = buildSlugFromTitle();
+      slugEl.dataset.autofill = '1';
+    }
+  }
+
+  titleEl.addEventListener('input', maybeAutoGenerateSlug);
+
+  slugEl.addEventListener('input', () => {
+    // If user types into slug and it's not exactly our current autofill, mark as user-edited.
+    if (slugEl.dataset.autofill === '1' && slugEl.value === buildSlugFromTitle()) return;
+    userEditedSlug = true;
+    slugEl.dataset.autofill = '0';
+  });
+
+  // Regenerate button (forces rebuild and resets "user edited" flag)
+  regenBtn.addEventListener('click', () => {
+    slugEl.value = buildSlugFromTitle();
+    slugEl.dataset.autofill = '1';
+    userEditedSlug = false;
+  });
+
+  // On load: if no slug provided (new post), generate immediately.
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!slugEl.value.trim()) {
+      slugEl.value = buildSlugFromTitle();
+      slugEl.dataset.autofill = '1';
+    }
+  });
+
+  // --------- Live HTML preview ----------
+  const htmlEl = document.getElementById('html');
+  const preview = document.getElementById('preview');
+  function sync(){
+    const heroURL = heroInput.value;
+    // preserve top hero block
+    const topHero = heroURL ? `<p><img src="${heroURL}" alt="" style="max-width:100%; border-radius:12px;" data-hero="1"/></p>` : '';
+    preview.innerHTML = topHero + htmlEl.value;
+  }
+  htmlEl.addEventListener('input', sync);
+
+  // --------- Insert-at-caret helper ----------
+  function insertAtCaret(textarea, text){
+    const start = textarea.selectionStart, end = textarea.selectionEnd;
+    const before = textarea.value.slice(0, start);
+    const after  = textarea.value.slice(end);
+    textarea.value = before + text + after;
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.dispatchEvent(new Event('input'));
+  }
+
+  // --------- Upload images -> insert <img> ----------
+  document.getElementById('uploadBtn').addEventListener('click', async () => {
+    const files = document.getElementById('images').files;
+    if (!files || !files.length) { alert('Pick image(s) first.'); return; }
+
+    const fd = new FormData();
+    Array.from(files).forEach(f => fd.append('images', f));
+
+    const btn = document.getElementById('uploadBtn');
+    const old = btn.textContent; btn.textContent = 'Uploading...'; btn.disabled = true;
+    try {
+      const r = await fetch('/admin/blog/upload', { method: 'POST', body: fd });
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error || 'Upload failed');
+
+      for (const f of data.files) {
+        insertAtCaret(htmlEl, `\n<p><img src="${f.url}" width="${f.width}" height="${f.height}" alt=""></p>\n`);
+      }
+    } catch (e) {
+      alert(e.message || 'Upload error');
+    } finally {
+      btn.textContent = old; btn.disabled = false;
+      document.getElementById('images').value = '';
+    }
+  });
+
+  // Initial preview
+  const heroInput   = document.getElementById('hero');
+  const heroFile    = document.getElementById('heroFile');
+  const heroBtn     = document.getElementById('uploadHeroBtn');
+  const removeHero  = document.getElementById('removeHeroBtn');
+  const heroWrap    = document.getElementById('heroPreviewWrap');
+  const heroImg     = document.getElementById('heroPreview');
+
+  async function uploadHero() {
+    if (!heroFile.files || !heroFile.files[0]) { alert('Pick a hero image first.'); return; }
+    const fd = new FormData();
+    fd.append('hero', heroFile.files[0]);
+
+    heroBtn.disabled = true; heroBtn.textContent = 'Uploading...';
+    try {
+      const r = await fetch('/admin/blog/upload-hero', { method: 'POST', body: fd });
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error || 'Upload failed');
+      heroInput.value = data.file.url;
+      heroImg.src = data.file.url;
+      heroWrap.style.display = 'block';
+      heroImg.style.aspectRatio= "3/1";
+      heroImg.style.width="100%";
+      heroImg.style.objectFit="cover";
+      removeHero.disabled = false;
+
+      // also reflect in live preview's top if present
+      const prev = document.getElementById('preview');
+      const existingTopImg = prev.querySelector('[data-hero="1"]');
+      if (existingTopImg) {
+        existingTopImg.src = data.file.url;
+      } else {
+        const p = document.createElement('p');
+        const i = document.createElement('img');
+        i.src = data.file.url;
+        i.alt = '';
+        i.style.maxWidth = '100%';
+        i.style.borderRadius = '12px';
+        i.setAttribute('data-hero','1');
+        p.appendChild(i);
+        prev.prepend(p);
+      }
+    } catch (e) {
+      alert(e.message || 'Upload error');
+    } finally {
+      heroBtn.disabled = false; heroBtn.textContent = 'Upload hero';
+      heroFile.value = '';
+    }
+  }
+  heroBtn.addEventListener('click', uploadHero);
+
+  removeHero.addEventListener('click', () => {
+    heroInput.value = '';
+    heroImg.src = '';
+    heroWrap.style.display = 'none';
+    removeHero.disabled = true;
+    // remove from preview top
+    const prev = document.getElementById('preview');
+    const existingTopImg = prev.querySelector('[data-hero="1"]');
+    if (existingTopImg) existingTopImg.closest('p')?.remove();
+  });
+
+  // When HTML changes, keep preview synced (and keep hero at top)
+  
+  // initial sync will respect current hero
+  sync();
+</script>
+</body>
+</html>
