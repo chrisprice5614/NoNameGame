@@ -42,7 +42,11 @@
           <span id="donorName"><%= formatName(d.name) %></span>!
         </h1>
         <p class="section-sub" style="margin:0 0 16px; color:var(--muted);">
-          <%= new Date(d.created_at).toLocaleString() %>
+          <%= new Date(d.created_at).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+}) %>
         </p>
 
         <div class="row" style="display:flex; gap:16px; flex-wrap:wrap; align-items: stretch">
