@@ -8,13 +8,136 @@
   <meta name="robots" content="noindex,follow">
 
   <style>
-    /* Print-friendly: hide chrome, center card */
+    /* Print-friendly */
     @media print {
       header, footer, .noprint { display: none !important; }
       body { background: #fff !important; }
       .print-wrap { margin: 0 !important; padding: 0 !important; }
       .thank-card { box-shadow: none !important; border: none !important; }
     }
+
+    /* ========= Responsive square preview =========
+       - On desktop: up to 1080x1080
+       - On mobile: scales down while keeping 1:1
+    */
+    :root { --square: min(92vw, 1080px); }
+
+    #exportSquare {
+      width: var(--square);
+      aspect-ratio: 1 / 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      /* Parchment background (html2canvas-safe) */
+      background:
+        radial-gradient(1200px 800px at 20% 30%, rgba(0,0,0,0.05), rgba(0,0,0,0) 60%),
+        radial-gradient(900px 600px at 80% 20%, rgba(0,0,0,0.04), rgba(0,0,0,0) 60%),
+        radial-gradient(1000px 900px at 30% 85%, rgba(0,0,0,0.06), rgba(0,0,0,0) 60%),
+        linear-gradient(#f6f0e3, #efe6d2);
+      border-radius: 16px;
+    }
+
+    /* Soft vignette for worn edges (disabled during export) */
+    #exportSquare::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow:
+        inset 0 0 140px rgba(0,0,0,0.18),
+        inset 0 0 280px rgba(0,0,0,0.10);
+      pointer-events: none;
+    }
+
+    /* The card content */
+    #thankCard {
+      width: 92%;
+      height: 92%;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(.2px);
+      border: 1px solid #e3d9c6;
+      border-radius: 18px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      padding: clamp(16px, 4vw, 40px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.8vw, 16px);
+    }
+
+    /* IG-friendly type scale (keeps your families) */
+    #thankCard, #thankCard p, #thankCard li {
+      font-size: clamp(16px, 2.6vw, 26px);
+      line-height: 1.35;
+    }
+    #thankTitle {             /* your Brothers display font inline below */
+      font-size: clamp(36px, 7.2vw, 74px);
+      line-height: 1.05;
+      letter-spacing: .2px;
+      margin: 0;
+    }
+    #thankCard .pill {
+      display: inline-block;
+      font-size: clamp(14px, 2.8vw, 28px);
+      padding: clamp(6px, 1.4vw, 10px) clamp(10px, 2vw, 16px);
+      border-radius: 999px;
+      background: #fffaf1;
+      color: #6E3B16;
+      border: 1px solid #e3d9c6;
+    }
+    .section-sub {
+      font-size: clamp(14px, 2.4vw, 24px);
+      color: #6b655f;
+      margin: 0;
+    }
+    #thankCard .card {
+      background: #fff;
+      border: 1px solid #e3d9c6;
+      border-radius: 14px;
+      padding: clamp(10px, 1.6vw, 16px);
+    }
+    #thankCard h3 {
+      font-size: clamp(16px, 3vw, 28px);
+      margin: 0 0 6px;
+    }
+    .big-amount {
+      font-size: clamp(28px, 5.2vw, 52px);
+      line-height: 1.05;
+      margin: 0;
+      font-weight: 700;
+    }
+    #donorMessage { font-size: clamp(16px, 2.6vw, 26px); }
+    #thankMessage { font-size: clamp(16px, 3vw, 28px); margin-top: clamp(12px, 2.2vw, 26px); }
+
+    .row.equal {
+      display: flex;
+      gap: clamp(10px, 1.6vw, 16px);
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    /* ====== Capture Mode (pin square to 0,0 and export a perfect 1080x1080) ====== */
+    html.capturing #exportSquare {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important;
+      width: 1080px !important; height: 1080px !important;
+      transform: none !important;
+      margin: 0 !important; z-index: 2147483647 !important;
+      border-radius: 0 !important;
+    }
+    html.capturing header,
+    html.capturing footer,
+    html.capturing .noprint { display: none !important; }
+
+    /* Export-only: disable effects that can gray out in html2canvas */
+    html.exporting #exportSquare::after { display: none !important; }
+    html.exporting #thankCard {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+    }
+    html.exporting #exportSquare, html.exporting #exportSquare * { filter: none !important; }
   </style>
 </head>
 <body>
@@ -23,50 +146,50 @@
   </header>
 
   <main class="container print-wrap">
-    <section class="hero noprint" style="padding-top:32px;">
+    <section class="hero noprint" style="padding-top:24px;">
       <div class="pill">Thank You Card</div>
       <h1>Donation #<%= d.id %></h1>
-      <p>Create a printable thank-you for this donor.</p>
-      <div class="row" style="display:flex; gap:12px;">
+      <p>Preview scales to your screen; export is always 1080×1080.</p>
+      <div class="row" style="display:flex; gap:12px; flex-wrap:wrap;">
         <a class="btn" href="/admin">Back to admin</a>
+        <button class="btn" id="savePngBtn" type="button">Save PNG</button>
         <button class="btn btn-primary" onclick="window.print()">Print</button>
       </div>
     </section>
 
-    <!-- The card itself -->
-    <section style="display:flex; justify-content:center; margin-top:18px;">
-      <article class="thank-card card" style="max-width:800px; width:100%; padding:32px;">
-        <div class="pill">The Game With No Name</div>
-        <h1 id="thankTitle" style="margin:10px 0 4px; font-family: 'brothers', sans-serif;">
-          Thank you, 
-          <span id="donorName"><%= formatName(d.name) %></span>!
-        </h1>
-        <p class="section-sub" style="margin:0 0 16px; color:var(--muted);">
-          <%= new Date(d.created_at).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-}) %>
-        </p>
+    <!-- Responsive square preview -->
+    <section class="center" style="display:flex; justify-content:center; margin-top:12px;">
+      <div id="exportSquare">
+        <article class="thank-card card" id="thankCard">
+          <div class="pill">The Game With No Name</div>
 
-        <div class="row" style="display:flex; gap:16px; flex-wrap:wrap; align-items: stretch">
-          <div class="card" style="flex:1 1 220px;">
-            <h3 class="mb-1">Amount</h3>
-            <p style="font-size:24px; margin:0;">$<%= Number(d.donation || 0).toFixed(2) %></p>
-          </div>
-          <div class="card" style="flex:3 1 320px;">
-            <h3 class="mb-1">Message</h3>
-            <p id="donorMessage" style="margin:0; white-space:pre-wrap;\"><%= (d.message || '—') %></p>
-          </div>
-        </div>
+          <h1 id="thankTitle" style="font-family:'brothers', sans-serif;">
+            Thank you, <span id="donorName"><%= formatName(d.name) %></span>!
+          </h1>
 
-        <p id="thankMessage" style="margin-top:24px;">
-          Your support helps us bring online multiplayer, more maps, modes, and polish to the fast-action western shooter!
-        </p>
-      </article>
+          <p class="section-sub">
+            <%= new Date(d.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+          </p>
+
+          <div class="row equal">
+            <div class="card" style="flex:1 1 260px;">
+              <h3 class="mb-1">Amount</h3>
+              <p class="big-amount">$<%= Number(d.donation || 0).toFixed(2) %></p>
+            </div>
+            <div class="card" style="flex:3 1 420px;">
+              <h3 class="mb-1">Their Message</h3>
+              <p id="donorMessage" style="margin:0; white-space:pre-wrap;"><%= (d.message || '—') %></p>
+            </div>
+          </div>
+
+          <p id="thankMessage">
+            Your support helps us bring online multiplayer, more maps, modes, and polish to the fast-action western shooter!
+          </p>
+        </article>
+      </div>
     </section>
 
-    <!-- Form to edit thank-you -->
+    <!-- Controls -->
     <section class="noprint" style="max-width:800px; margin:24px auto;">
       <form id="thankForm" class="form vstack" style="gap:12px;">
         <div class="field">
@@ -88,7 +211,7 @@
       </form>
     </section>
 
-    <section class="noprint" style="text-align:center; margin-top:18px;">
+    <section class="noprint" style="text-align:center; margin-top:12px;">
       <a class="btn btn-primary" href="/back">Back the project</a>
     </section>
   </main>
@@ -97,8 +220,9 @@
     <%- include("includes/footer") %>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    // Format name (first name + initials of the rest)
+    // Format name (first + initials of remaining parts)
     function formatNameJS(name) {
       if (!name || !name.trim()) return "Anonymous";
       const parts = name.trim().split(/\s+/);
@@ -106,26 +230,61 @@
       return parts[0] + " " + parts.slice(1).map(p => p[0].toUpperCase() + ".").join(" ");
     }
 
+    // Live preview controls
     document.getElementById("thankForm").addEventListener("submit", function(e) {
       e.preventDefault();
       const msg = document.getElementById("newMessage").value.trim();
       const hideName = document.getElementById("hideName").checked;
       const hideMessage = document.getElementById("hideMessage").checked;
 
-      // Update thank you text
       document.getElementById("thankMessage").textContent = msg || "—";
 
-      // Hide or show donor name
       const nameSpan = document.getElementById("donorName");
-      if (hideName) {
-        nameSpan.textContent = "valued supporter";
-      } else {
-        nameSpan.textContent = formatNameJS("<%= d.name || '' %>");
-      }
+      if (hideName) nameSpan.textContent = "valued supporter";
+      else          nameSpan.textContent = formatNameJS("<%= d.name || '' %>");
 
-      // Hide or show donor message
       const donorMsg = document.getElementById("donorMessage");
       donorMsg.textContent = hideMessage ? "—" : "<%= (d.message || '—') %>";
+    });
+
+    // Rock-solid 1080x1080 export
+    document.getElementById("savePngBtn").addEventListener("click", async function () {
+      const square = document.getElementById("exportSquare");
+      const htmlEl = document.documentElement;
+
+      try {
+        window.scrollTo(0, 0);                 // avoid scroll offsets
+        htmlEl.classList.add("capturing", "exporting");
+        await (document.fonts?.ready || Promise.resolve());
+
+        const canvas = await html2canvas(square, {
+          backgroundColor: null,               // keep parchment
+          width: 1080,
+          height: 1080,
+          scale: 1,
+          x: 0, y: 0, scrollX: 0, scrollY: 0, // capture fixed square at 0,0
+          logging: false
+        });
+
+        const dataURL = canvas.toDataURL("image/png");
+        const safeName = (document.getElementById("donorName").textContent || "supporter")
+          .replace(/[^a-z0-9\-_. ]/gi, "")
+          .trim()
+          .replace(/\s+/g, "-")
+          .toLowerCase();
+
+        const a = document.createElement("a");
+        a.href = dataURL;
+        a.download = `thank-you-<%= d.id %>-${safeName || "supporter"}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        alert("Could not generate PNG: " + (err?.message || err));
+        console.error(err);
+      } finally {
+        htmlEl.classList.remove("capturing", "exporting");
+      }
     });
   </script>
 </body>
