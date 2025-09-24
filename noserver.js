@@ -5,6 +5,9 @@ const body_parser = require("body-parser")
 const path = require('path');
 const node_fetch = require("node-fetch")
 const nodemailer = require("nodemailer")
+const jwt = require("jsonwebtoken")//npm install jsonwebtoken dotenv
+const bcrypt = require("bcrypt") //npm install bcrypt
+const cookieParser = require("cookie-parser")//npm install cookie-parser
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const online = true;
@@ -157,6 +160,17 @@ createTables()
 
 const app = express()
 
+// Format name (first + initials of rest)
+function formatName(full) {
+  if (!full || !full.trim()) return "Anonymous";
+  const parts = full.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return parts[0] + " " + parts.slice(1).map(p => p[0].toUpperCase() + "").join(" ");
+}
+
+// Make helper available in all views
+app.locals.formatName = formatName;
+
 
 
 app.use(express.json())
@@ -165,6 +179,7 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static("public")) //Using public folder
 app.use(express.static('/public'));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser(process.env.COOKIE_SECRET || "dev-cookie-secret"));
 app.use(express.json());
 app.use(body_parser.json())
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
@@ -197,6 +212,108 @@ function toCents(amountStr) {
   if (!isFinite(n)) return NaN;
   return Math.round(n * 100);
 }
+
+// ==== Admin Auth (cookie name: noAdmin) ====
+const ADMIN_COOKIE = "noAdmin";
+
+function signAdminToken(payload = {}) {
+  return jwt.sign(
+    { role: "admin", ...payload },
+    process.env.ADMIN_JWT_SECRET || "dev-admin-secret",
+    { expiresIn: "7d" }
+  );
+}
+
+function verifyAdminToken(token) {
+  try {
+    return jwt.verify(token, process.env.ADMIN_JWT_SECRET || "dev-admin-secret");
+  } catch {
+    return null;
+  }
+}
+
+function isAdmin(req) {
+  // try signed cookie first, then unsigned (in case signing not configured)
+  const token = (req.signedCookies && req.signedCookies[ADMIN_COOKIE]) || req.cookies[ADMIN_COOKIE];
+  if (!token) return false;
+  const decoded = verifyAdminToken(token);
+  return decoded && decoded.role === "admin";
+}
+
+function requireAdmin(req, res, next) {
+  if (isAdmin(req)) return next();
+  // Not authenticated—show login page
+  return res.render("admin-login", {
+    error: null
+  });
+}
+
+// Show donations in admin (most recent first)
+app.get("/admin", requireAdmin, (req, res) => {
+  // Change this limit if you want more/less on one page
+  const LIMIT = 500;
+
+  const donations = db.prepare(`
+    SELECT id, name, email, message, donation, created_at
+    FROM donations
+    ORDER BY datetime(created_at) DESC
+    LIMIT ?
+  `).all(LIMIT);
+
+  const totals = db.prepare(`
+    SELECT
+      COUNT(*) AS donationCount,
+      COALESCE(SUM(donation), 0) AS totalDollars
+    FROM donations
+  `).get();
+
+  res.render("admin", { donations, totals, limit: LIMIT });
+});
+
+// Detail (printer-friendly Thank-You page)
+app.get("/donations/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const d = db.prepare(`
+    SELECT id, name, message, donation, created_at
+    FROM donations
+    WHERE id = ?
+  `).get(id);
+  if (!d) return res.status(404).render("donation-missing");
+  res.render("donation", { d });
+});
+
+
+// POST /admin/login
+app.post("/admin/login", (req, res) => {
+  const { password } = req.body || {};
+  const expected = process.env.ADMIN_PASSWORD;
+
+  if (!expected) {
+    return res.status(500).send("ADMIN_PASSWORD is not set on the server.");
+  }
+
+  if (password && password === expected) {
+    const token = signAdminToken({ at: Date.now() });
+    res.cookie(ADMIN_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      signed: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    return res.redirect("/admin");
+  }
+
+  return res.status(401).render("admin-login", {
+    error: "Incorrect password."
+  });
+});
+
+// POST /admin/logout
+app.post("/admin/logout", (req, res) => {
+  res.clearCookie(ADMIN_COOKIE);
+  res.redirect("/admin");
+});
 
 app.post("/donate", async (req, res) => {
   try {

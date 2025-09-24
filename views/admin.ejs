@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin — The Game With No Name</title>
+  <%- include("includes/head") %>
+  <meta name="description" content="Admin area for The Game With No Name"/>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    /* make table rows feel clickable without adding new CSS files */
+    .rowlink { cursor: pointer; }
+    .rowlink:hover { background: #fffdf6; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .nowrap { white-space: nowrap; }
+    .truncate { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <%- include("includes/header") %>
+  </header>
+
+  <main class="container">
+    <section class="hero" style="padding-top:32px;">
+      <div class="pill">Admin</div>
+      <h1>Dashboard</h1>
+      <p>Admin controls for The Game With No Name.</p>
+      <form method="POST" action="/admin/logout" class="form" style="margin-top:12px;">
+        <button type="submit" class="btn btn-primary">Log out</button>
+      </form>
+    </section>
+
+    <section class="grid mt-3" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px;">
+      <article class="card">
+        <h3 class="mb-1">Total donations</h3>
+        <p style="font-size:22px; margin:0;">
+          $<%= Number(totals.totalDollars || 0).toFixed(2) %>
+        </p>
+      </article>
+      <article class="card">
+        <h3 class="mb-1">Donation count</h3>
+        <p style="font-size:22px; margin:0;">
+          <%= totals.donationCount %>
+        </p>
+      </article>
+    </section>
+
+    <section class="mt-3">
+      <h2 class="section-title">Recent Donations</h2>
+      <p class="section-sub" style="color:var(--muted);">
+        Showing up to <%= limit %> most recent donations.
+      </p>
+
+      <div style="overflow:auto; margin-top:12px;">
+        <table class="table" style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border, #e3d9c6); background: #fffaf1;">
+              <th style="text-align:left; padding:10px;">ID</th>
+              <th style="text-align:left; padding:10px;">When</th>
+              <th style="text-align:left; padding:10px;">Name</th>
+              <th style="text-align:left; padding:10px;">Email</th>
+              <th style="text-align:left; padding:10px;">Amount</th>
+              <th style="text-align:left; padding:10px;">Message</th>
+              <th style="text-align:left; padding:10px;">Card</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% donations.forEach(d => { %>
+              <tr class="rowlink" onclick="location.href='/donations/<%= d.id %>'" style="border-bottom: 1px solid #efe6d7;">
+                <td class="mono nowrap" style="padding:10px;"><%= d.id %></td>
+                <td class="mono nowrap" style="padding:10px;"><%= new Date(d.created_at).toLocaleString() %></td>
+                <td style="padding:10px;"><%= d.name && d.name.trim() ? d.name : 'Anonymous' %></td>
+                <td style="padding:10px;"><%= d.email || '' %></td>
+                <td style="padding:10px;">$<%= Number(d.donation || 0).toFixed(2) %></td>
+                <td class="truncate" style="padding:10px;"><%= (d.message || '') %></td>
+                <td style="padding:10px;">
+                  <a class="btn" href="/donations/<%= d.id %>">Open</a>
+                </td>
+              </tr>
+            <% }) %>
+            <% if (!donations.length) { %>
+              <tr><td colspan="7" style="padding:12px; color:var(--muted);">No donations yet.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="center mt-4" style="padding:24px; color:var(--muted);">
+    <%- include("includes/footer") %>
+  </footer>
+</body>
+</html>
