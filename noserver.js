@@ -11,9 +11,18 @@ const cookieParser = require("cookie-parser")//npm install cookie-parser
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const fs = require("fs");
 const multer = require("multer");
+const crypto = require("crypto");
 const sharp = require("sharp");
 
 const online = true;
+function normalizeEmail(e) {
+  return String(e || "").trim().toLowerCase();
+}
+
+
+function generateSecret(len = 24) {
+  return crypto.randomBytes(len).toString("base64url").replace(/[^a-zA-Z0-9]/g, "").slice(0, len);
+}
 
 
 async function sendEmail(to, subject, html) {
@@ -35,90 +44,152 @@ async function sendEmail(to, subject, html) {
 
 
     let info = await transporter.sendMail({
-        from: '"Chris Price Music" <info@chrispricemusic.net>',
+        from: '"The Game With No Name" <info@thegamewithnoname.com>',
         to: to,
         subject: subject,
         html: `
         <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Boise Gems Drum & Bugle Corps</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>The Game With No Name — Email</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
-    }
+    /* --- Mobile resets --- */
+    body { margin:0; padding:0; background:#F2E9DC; }
+    table { border-collapse:collapse; }
+    img { border:0; line-height:100%; outline:none; text-decoration:none; }
+    a { text-decoration:underline; }
 
-    table {
-      border-collapse: collapse;
-    }
+    /* --- Brand palette (no external assets) ---
+       Saddle       #3B2410
+       Mesa Clay    #C46A2B
+       Dry Grass    #E2C9A3
+       Parchment    #FFF9EF
+       Night Sky    #1E1A16
+    */
 
+    /* --- Responsiveness --- */
     @media only screen and (max-width: 600px) {
-      .content {
-        width: 100% !important;
-      }
-      .logo {
-        width: 80px !important;
-      }
+      .content { width:100% !important; border-radius:0 !important; padding:24px !important; }
+      .wrap { padding:16px !important; }
+      .h1 { font-size:24px !important; line-height:1.2 !important; }
+      .h2 { font-size:18px !important; }
+      .btn { display:block !important; width:100% !important; }
+    }
+
+    /* Dark mode hint (many clients ignore, but harmless) */
+    @media (prefers-color-scheme: dark) {
+      body { background:#1E1A16; }
+      .content { background:#2A241E !important; color:#F2E9DC !important; }
+      .muted { color:#BCA98C !important; }
+      a { color:#E5A46E !important; }
     }
   </style>
 </head>
-<body>
-  <!-- Main wrapper with padding on cell -->
-  <table width="100%" bgcolor="#f4f4f4" cellpadding="0" cellspacing="0" role="presentation">
-    <tr>
-      <td align="center" style="padding: 24px;">
-        <!-- Centered content table -->
-        <table class="content" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; padding: 32px; font-family: Arial, sans-serif; color: #333333; border-radius: 6px; max-width: 600px; width: 100%;">
-          <!-- Logo -->
-          <tr>
-            <td align="center" style="padding-bottom: 24px;">
-              <a href="https://www.boisegems.org/" target="_blank">
-                <img src="https://raw.githubusercontent.com/chrisprice5614/chrisprice.io/refs/heads/main/gem.png" alt="Boise Gems Logo" width="100" class="logo" style="display: block; margin: 0 auto;">
-              </a>
-            </td>
-          </tr>
-          <!-- Title -->
-          <tr>
-            <td align="center" style="font-size: 24px; font-weight: bold; color: #60437D; padding-bottom: 12px;">
-              Boise Gems Drum & Bugle Corps
-            </td>
-          </tr>
-          <tr>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="font-size: 16px; line-height: 1.6; color: #333;">
-              <p>${html}</p>
+<body style="margin:0; padding:0; background:#F2E9DC;">
+  <!-- Preheader (hidden preview text) -->
+  <div style="display:none; visibility:hidden; opacity:0; color:transparent; height:0; width:0; overflow:hidden; mso-hide:all;">
+    Dispatch from the frontier — updates for The Game With No Name.
+  </div>
 
-            
-              </p>
-              <p style="margin-top: 32px;">
-                <strong>The Boise Gems</strong>
-              </p>
-            </td>
-          </tr>
-          <!-- Footer -->
+  <!-- Background wrapper -->
+  <table role="presentation" width="100%" bgcolor="#F2E9DC" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:24px;">
+
+        <!-- Card -->
+        <table role="presentation" class="content" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background:#FFF9EF; border-radius:8px; box-shadow:0 1px 0 rgba(30,26,22,0.04);">
+          <!-- Top bar accent -->
           <tr>
-            <td align="center" style="font-size: 12px; color: #999999; padding-top: 32px;">
-              © 2025 Boise Gems Drum & Bugle Corps ·
-              <a href="https://www.boisegems.org/" style="color: #999999; text-decoration: underline;">www.boisegems.org</a>
+            <td height="6" style="background:#C46A2B; border-top-left-radius:8px; border-top-right-radius:8px;"></td>
+          </tr>
+
+          <tr>
+            <td class="wrap" style="padding:32px; font-family: Georgia, 'Times New Roman', Times, serif; color:#3B2410;">
+
+              <!-- Title -->
+              <div class="h1" style="font-size:28px; line-height:1.25; font-weight:700; letter-spacing:0.5px; text-align:center;">
+                THE GAME WITH NO NAME
+              </div>
+
+              <!-- Subhead rule -->
+              <div style="height:1px; line-height:1px; background:#E2C9A3; margin:16px auto 24px; max-width:160px;"></div>
+
+              <!-- Body copy container (developer injects HTML here) -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size:16px; line-height:1.6; color:#1E1A16;">
+                    <!-- Inject your dynamic HTML here -->
+                    ${html}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA example (optional) -->
+              <!--
+              <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:24px auto 0;">
+                <tr>
+                  <td>
+                    <a class="btn" href="https://www.thegamewithnoname.com" target="_blank" style="display:inline-block; padding:12px 18px; border-radius:4px; background:#C46A2B; color:#FFF9EF; font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size:14px; font-weight:700; letter-spacing:0.3px; text-decoration:none;">
+                      Saddle Up & Play
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              -->
+
+              <!-- Footer -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                <tr>
+                  <td align="center" class="muted" style="font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size:12px; color:#7A6046;">
+                    © 2025 The Game With No Name ·
+                    <a href="https://www.thegamewithnoname.com" style="color:#7A6046; text-decoration:underline;">www.thegamewithnoname.com</a>
+                  </td>
+                </tr>
+              </table>
+
             </td>
           </tr>
         </table>
+
+        <!-- Bottom spacing -->
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
+          <tr><td style="height:16px; line-height:16px; font-size:0;">&nbsp;</td></tr>
+        </table>
+
       </td>
     </tr>
   </table>
 </body>
 </html>
 
+
         `
 
     })
 
 }
+
+const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+async function sendBulkEmails(emailList, subject, html) {
+  for (let i = 0; i < emailList.length; i++) {
+    const to = emailList[i];
+    try {
+      await sendEmail(to, subject, html);
+      console.log(`Sent to ${to}`);
+    } catch (err) {
+      console.error(`Failed to send to ${to}:`, err.message);
+    }
+
+    // Don't delay after the last one
+    if (i < emailList.length - 1) {
+      await delay(5000); // wait 5 seconds before next send
+    }
+  }
+}
+
 
 const createTables = db.transaction(() => {
     db.prepare(
@@ -133,6 +204,18 @@ const createTables = db.transaction(() => {
         )
         `
     ).run()
+
+    db.prepare(
+        `
+        CREATE TABLE IF NOT EXISTS emailList (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email STRING,
+        secret STRING
+        )
+        `
+    ).run()
+
+    try { db.prepare(`ALTER TABLE emailList ADD COLUMN secret STRING`).run(); } catch {}
 
     db.prepare(`
     CREATE TABLE IF NOT EXISTS checkout_sessions (
@@ -240,19 +323,19 @@ app.get("/", (req, res) => {
     FROM donations
   `).get();
 
-  // NEW: get the 3 most recent published blog posts
+  // NEW: get newsletter subscriber count
+  const newsletterStats = db.prepare(`SELECT COUNT(*) AS cnt FROM emailList`).get();
+
   let recentPosts = [];
   try {
     recentPosts = db.prepare(`
-    SELECT title, slug, created_at, hero
-    FROM blog_posts
-    WHERE published = 1
-    ORDER BY datetime(created_at) DESC
-    LIMIT 3
-  `).all();
-
-  } catch (e) {
-    // if table doesn't exist yet, keep recentPosts empty
+      SELECT title, slug, created_at, hero
+      FROM blog_posts
+      WHERE published = 1
+      ORDER BY datetime(created_at) DESC
+      LIMIT 3
+    `).all();
+  } catch {
     recentPosts = [];
   }
 
@@ -261,11 +344,13 @@ app.get("/", (req, res) => {
       donors: row.donorCount,
       donations: row.donationCount,
       totalCents: row.totalCents,
-      totalDollars: row.totalCents / 100
+      totalDollars: row.totalCents / 100,
+      newsletterCount: newsletterStats.cnt   // <- pass count
     },
     recentPosts
   });
 });
+
 
 
 function toCents(amountStr) {
@@ -376,6 +461,22 @@ app.post("/admin/logout", (req, res) => {
   res.redirect("/admin");
 });
 
+function donationThanksEmail({ name, dollars, unsubLink, isNewSub }) {
+  return `
+    <h2>Thank you for backing The Game With No Name!</h2>
+    <p>Howdy ${escapeHtml(name)} — your support of <strong>$${dollars}</strong> means a ton 🤠</p>
+    ${isNewSub ? `
+      <p>You’ve also been <strong>added to the TGWNN newsletter</strong> so you’ll get dev updates, builds, and behind-the-scenes.</p>
+    ` : `
+      <p>You’re already on our newsletter list, so you’ll keep getting dev updates, builds, and behind-the-scenes.</p>
+    `}
+    <hr/>
+    <p style="font-size:12px;color:#777">
+      Don’t want these emails? <a href="${unsubLink}">Unsubscribe</a>.
+    </p>
+  `;
+}
+
 app.post("/donate", async (req, res) => {
   try {
     const { name, email, amount, message } = req.body;
@@ -485,6 +586,40 @@ app.get("/thank-you", async (req, res) => {
         donationEmailTemplate({ name, email, message, amount: dollars })
       );
     }
+
+    try {
+    if (email) {
+      // subscribe donor if not already subscribed
+      const lower = normalizeEmail(email);
+      const sub = db.prepare("SELECT id, secret FROM emailList WHERE LOWER(email)=LOWER(?)").get(lower);
+
+      let secret, isNewSub = false;
+      if (!sub) {
+        secret = generateSecret(16);
+        db.prepare("INSERT INTO emailList (email, secret) VALUES (?, ?)").run(lower, secret);
+        isNewSub = true;
+      } else {
+        secret = sub.secret;
+      }
+
+      const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const unsubLink = `${base}/unsub/${secret}`;
+
+      // send donor welcome + thank-you (or just thank-you if already subscribed)
+      await sendEmail(
+        email,
+        "Thanks for your donation — and welcome to the TGWNN newsletter!",
+        donationThanksEmail({
+          name,
+          dollars: (amount_cents / 100).toFixed(2),
+          unsubLink,
+          isNewSub
+        })
+      );
+    }
+  } catch (e) {
+    console.error("Donor thank-you/newsletter send failed:", e);
+  }
 
     return res.render("thank-you"); // your existing thank-you page
   } catch (e) {
@@ -637,6 +772,161 @@ app.post("/admin/blog/upload-hero", requireAdmin, upload.single("hero"), async (
   }
 });
 
+app.post("/subscribe", async (req, res) => {
+  try {
+    const raw = (req.body && req.body.email) || "";
+    const email = normalizeEmail(raw);
+    if (!email) return res.status(400).json({ message: "Email required" });
+
+    // Check if already exists
+    const existing = db.prepare(
+      "SELECT id, email, secret FROM emailList WHERE LOWER(email) = LOWER(?)"
+    ).get(email);
+
+    if (existing) {
+      return res.json({ message: "You’re already subscribed!" });
+    }
+
+    const secret = generateSecret(16);
+    db.prepare("INSERT INTO emailList (email, secret) VALUES (?, ?)").run(email, secret);
+
+    const base =
+      process.env.PUBLIC_BASE_URL ||
+      `${req.protocol}://${req.get("host")}`;
+    const unsubLink = `${base}/unsub/${secret}`;
+
+    // Send welcome email (includes unsubscribe)
+    const welcomeHtml = `
+      <p>Welcome to <strong>The Game With No Name</strong> newsletter!</p>
+      <p>You’ll get dev updates, builds, and behind-the-scenes right here.</p>
+      <hr/>
+      <p style="font-size:12px;color:#777">
+        Don’t want these? <a href="${unsubLink}">Unsubscribe</a>.
+      </p>
+    `;
+
+    await sendEmail(email, "Welcome to TGWNN Newsletter 🤠", welcomeHtml);
+
+    return res.json({ message: "You’ve been subscribed! Check your email." });
+  } catch (err) {
+    console.error("Subscribe error:", err);
+    return res.status(500).json({ message: "Error subscribing" });
+  }
+});
+
+
+app.get("/unsub/:secret", (req, res) => {
+  try {
+    const { secret } = req.params || {};
+    if (!secret) return res.status(400).send("Invalid link.");
+
+    const result = db.prepare("DELETE FROM emailList WHERE secret = ?").run(secret);
+
+    if (result.changes > 0) {
+      return res.send(`
+        <!doctype html><meta charset="utf-8">
+        <title>Unsubscribed</title>
+        <div style="max-width:560px;margin:40px auto;font-family:Arial,Helvetica,sans-serif;line-height:1.5">
+          <h1 style="margin:0 0 8px">You’ve been unsubscribed.</h1>
+          <p>You will no longer receive emails from <em>The Game With No Name</em>.</p>
+          <p><a href="/">Return to homepage</a></p>
+        </div>
+      `);
+    } else {
+      return res.send(`
+        <!doctype html><meta charset="utf-8">
+        <title>Invalid link</title>
+        <div style="max-width:560px;margin:40px auto;font-family:Arial,Helvetica,sans-serif;line-height:1.5">
+          <h1 style="margin:0 0 8px">Invalid or expired link</h1>
+          <p>This unsubscribe link has already been used or is not valid.</p>
+          <p><a href="/">Return to homepage</a></p>
+        </div>
+      `);
+    }
+  } catch (err) {
+    console.error("Unsub error:", err);
+    return res.status(500).send("Error unsubscribing. Please try again later.");
+  }
+});
+
+function appendUnsub(html, unsubUrl) {
+  return `${html}
+    <hr/>
+    <p style="font-size:12px;color:#777">
+      Don’t want these emails? <a href="${unsubUrl}">Unsubscribe</a>.
+    </p>`;
+}
+
+// Example broadcast (sequential, spaced out)
+async function sendNewsletterToAll(subject, baseHtml) {
+  const base = process.env.PUBLIC_BASE_URL || "https://thegamewithnoname.com";
+  const subs = db.prepare("SELECT email, secret FROM emailList").all();
+
+  for (let i = 0; i < subs.length; i++) {
+    const { email, secret } = subs[i];
+    const unsub = `${base}/unsub/${secret}`;
+    try {
+      await sendEmail(email, subject, appendUnsub(baseHtml, unsub));
+      console.log("Sent to", email);
+    } catch (e) {
+      console.error("Failed to send to", email, e.message);
+    }
+    if (i < subs.length - 1) await delay(5000);
+  }
+}
+
+// Page: editor + preview (ADMIN ONLY)
+app.get("/admin/newsletter", requireAdmin, (req, res) => {
+  const stats = db.prepare("SELECT COUNT(*) AS n FROM emailList").get();
+  const subsCount = stats?.n || 0;
+
+  // Sensible defaults you can tweak
+  const defaultSubject = "TGWNN Dev Update";
+  const defaultHtml = `
+    <h2>Howdy from The Game With No Name 🤠</h2>
+    <p>Quick update from the frontier:</p>
+    <ul>
+      <li>New pre-alpha build notes</li>
+      <li>Level polish and weapon pass</li>
+      <li>Upcoming playtest schedule</li>
+    </ul>
+    <p>Thanks for backing and sharing!</p>
+  `.trim();
+
+  res.render("admin-newsletter", { subsCount, defaultSubject, defaultHtml });
+});
+
+// Send to everyone (ADMIN ONLY)
+app.post("/admin/newsletter/send", requireAdmin, async (req, res) => {
+  try {
+    const { subject, html } = req.body || {};
+    if (!subject || !html) {
+      return res.status(400).json({ ok: false, message: "Subject and HTML are required." });
+    }
+
+    const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const subs = db.prepare("SELECT email, secret FROM emailList").all();
+
+    let sent = 0, failed = 0;
+    for (let i = 0; i < subs.length; i++) {
+      const { email, secret } = subs[i];
+      const unsubUrl = `${base}/unsub/${secret}`;
+      try {
+        await sendEmail(email, subject, appendUnsub(html, unsubUrl));
+        sent++;
+      } catch (e) {
+        console.error("Newsletter send failed:", email, e.message);
+        failed++;
+      }
+      if (i < subs.length - 1) await delay(5000); // 5s spacing
+    }
+
+    return res.json({ ok: true, sent, failed, total: subs.length });
+  } catch (err) {
+    console.error("newsletter/send error:", err);
+    return res.status(500).json({ ok: false, message: "Failed to send newsletter." });
+  }
+});
 
 
 app.listen(2024)

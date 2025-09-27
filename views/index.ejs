@@ -109,6 +109,55 @@
 
     <%- include("includes/tiers") %>
 
+<section id="newsletter" class="mt-3">
+  <h2 class="section-title">Sign Up For Newsletter</h2>
+  <p class="section-sub">Get the latest news, dev updates, and sneak peeks right in your inbox.</p>
+
+  <form id="newsletterForm" style="display:flex; gap:12px; max-width:420px; margin-top:12px;">
+    <input type="email" id="newsletterEmail" name="email" placeholder="Your email" required 
+           style="flex:1; padding:10px; border:1px solid #ccc; border-radius:4px;">
+    <button type="submit" class="btn btn-primary">Subscribe</button>
+  </form>
+
+  <p id="newsletterMsg" style="margin-top:8px; font-size:14px; color:var(--muted);"></p>
+  <p id="newsletterCount" style="margin-top:4px; font-size:14px; color:var(--muted);">
+    <%= stats.newsletterCount %> people have signed up for the newsletter
+  </p>
+</section>
+
+<script>
+  const form = document.getElementById("newsletterForm");
+  const msg = document.getElementById("newsletterMsg");
+  const countEl = document.getElementById("newsletterCount");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "Subscribing…";
+    const email = document.getElementById("newsletterEmail").value.trim();
+
+    try {
+      const res = await fetch("/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      msg.textContent = data.message;
+
+      if (res.ok && data.message.includes("subscribed")) {
+        // bump the count in the DOM
+        const current = parseInt(countEl.textContent) || 0;
+        countEl.textContent = (current + 1) + " people have signed up for the newsletter";
+        form.reset();
+      }
+    } catch (err) {
+      msg.textContent = "Error subscribing. Please try again.";
+    }
+  });
+</script>
+
+
+
     <section id="gallery">
       <h2 class="section-title">Screenshots</h2>
       <div class="grid gallery mt-3">
