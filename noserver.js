@@ -131,7 +131,7 @@ async function sendEmail(to, subject, html) {
               <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:24px auto 0;">
                 <tr>
                   <td>
-                    <a class="btn" href="https://www.thegamewithnoname.com" target="_blank" style="display:inline-block; padding:12px 18px; border-radius:4px; background:#C46A2B; color:#FFF9EF; font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size:14px; font-weight:700; letter-spacing:0.3px; text-decoration:none;">
+                    <a class="btn" href="https://thegamewithnoname.com/" target="_blank" style="display:inline-block; padding:12px 18px; border-radius:4px; background:#C46A2B; color:#FFF9EF; font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size:14px; font-weight:700; letter-spacing:0.3px; text-decoration:none;">
                       Saddle Up & Play
                     </a>
                   </td>
@@ -144,7 +144,7 @@ async function sendEmail(to, subject, html) {
                 <tr>
                   <td align="center" class="muted" style="font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif; font-size:12px; color:#7A6046;">
                     © 2025 The Game With No Name ·
-                    <a href="https://www.thegamewithnoname.com" style="color:#7A6046; text-decoration:underline;">www.thegamewithnoname.com</a>
+                    <a href="https://thegamewithnoname.com/" style="color:#7A6046; text-decoration:underline;">www.thegamewithnoname.com</a>
                   </td>
                 </tr>
               </table>
